@@ -9,6 +9,17 @@ class TestPackageConan(ConanFile):
     settings = "os", "compiler", "build_type", "arch"
     generators = "cmake"
 
+    def is_emscripten(self):
+        try:
+            return self.settings.compiler == 'emcc'
+        except:
+		    return False
+
+    def configure(self):
+        if self.is_emscripten():
+            del self.settings.os
+            del self.settings.arch
+
     def build(self):
         cmake = CMake(self)
         cmake.configure()
@@ -16,7 +27,10 @@ class TestPackageConan(ConanFile):
 
     def test(self):
         with tools.environment_append(RunEnvironment(self).vars):
-            if self.settings.os == "Windows":
+            if self.is_emscripten():
+                self.run("LD_LIBRARY_PATH=%s node %s.js" % (os.environ.get('LD_LIBRARY_PATH', ''), os.path.join("bin", "test_package")))
+
+            elif self.settings.os == "Windows":
                 self.run(os.path.join("bin", "test_package"))
             elif self.settings.os == "Macos":
                 self.run("DYLD_LIBRARY_PATH=%s %s" % (os.environ.get('DYLD_LIBRARY_PATH', ''), os.path.join("bin", "test_package")))

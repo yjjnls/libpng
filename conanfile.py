@@ -6,6 +6,12 @@ import shutil
 from conans import ConanFile, tools, CMake
 
 
+try:
+    import conanos.conan.hacks.cmake
+except:
+    if os.environ.get('EMSCRIPTEN_VERSIONS'):
+        raise Exception('Please use pip install conanos to patch conan for emscripten binding !')
+
 class LibpngConan(ConanFile):
     name = "libpng"
     version = "1.6.34"
@@ -22,8 +28,14 @@ class LibpngConan(ConanFile):
 
     source_subfolder = "source_subfolder"
 
+    def is_emscripten(self):
+        try:
+            return self.settings.compiler == 'emcc'
+        except:
+		    return False
+
     def requirements(self):
-        self.requires.add("zlib/1.2.11@conan/stable")
+        self.requires.add("zlib/1.2.11@conanos/testing")
 
     def config_options(self):
         if self.settings.os == "Windows":
@@ -31,6 +43,17 @@ class LibpngConan(ConanFile):
 
     def configure(self):
         del self.settings.compiler.libcxx
+
+        if self.is_emscripten():
+            del self.settings.os
+            del self.settings.arch
+            self.options.remove("fPIC")
+            self.options.remove("shared")
+
+        # use shared zlib for dynamic lib
+        if not self.is_emscripten():
+            if self.options.shared:
+                self.options['zlib'].shared = True
 
     def source(self):
         base_url = "https://sourceforge.net/projects/libpng/files/libpng16/"
@@ -43,12 +66,12 @@ class LibpngConan(ConanFile):
                     os.path.join(self.source_subfolder, "CMakeLists.txt"))
 
     def build(self):
-        if self.settings.os == "Windows" and self.settings.compiler == "gcc":
+        if not self.is_emscripten() and self.settings.os == "Windows" and self.settings.compiler == "gcc":
             tools.replace_in_file("%s/CMakeListsOriginal.txt" % self.source_subfolder,
                                   'COMMAND "${CMAKE_COMMAND}" -E copy_if_different $<TARGET_LINKER_FILE_NAME:${S_TARGET}> $<TARGET_LINKER_FILE_DIR:${S_TARGET}>/${DEST_FILE}',
                                   'COMMAND "${CMAKE_COMMAND}" -E copy_if_different $<TARGET_LINKER_FILE_DIR:${S_TARGET}>/$<TARGET_LINKER_FILE_NAME:${S_TARGET}> $<TARGET_LINKER_FILE_DIR:${S_TARGET}>/${DEST_FILE}')
         # do not use _static suffix on VS
-        if self.settings.os == "Windows" and self.settings.compiler == "Visual Studio":
+        if not self.is_emscripten() and self.settings.os == "Windows" and self.settings.compiler == "Visual Studio":
             tools.replace_in_file("%s/CMakeListsOriginal.txt" % self.source_subfolder,
                                   'OUTPUT_NAME "${PNG_LIB_NAME}_static',
                                   'OUTPUT_NAME "${PNG_LIB_NAME}')
@@ -58,10 +81,22 @@ class LibpngConan(ConanFile):
                                   '-lpng@PNGLIB_MAJOR@@PNGLIB_MINOR@',
                                   '-lpng@PNGLIB_MAJOR@@PNGLIB_MINOR@d')
 
-        if 'arm' in self.settings.arch and self.settings.os == "Linux":
+        if not self.is_emscripten() and 'arm' in self.settings.arch and self.settings.os == "Linux":
             tools.replace_in_file(os.path.join(self.source_subfolder, 'CMakeListsOriginal.txt'),
                                   'PATHS /usr/lib /usr/local/lib',
                                   'PATHS /usr/lib /usr/local/lib /usr/arm-linux-gnueabihf/lib /usr/arm-linux-gnueabi/lib ')
+
+        if self.is_emscripten():
+            tools.replace_in_file(os.path.join(self.source_subfolder, 'CMakeListsOriginal.txt'),
+                                  'symbol_prefix()',
+                                  '#symbol_prefix()')
+
+            tools.replace_in_file(os.path.join(self.source_subfolder, 'CMakeListsOriginal.txt'),
+                                  'if(NOT M_LIBRARY)',
+                                  'set(M_LIBRARY "")\n  if(NOT M_LIBRARY)')
+
+
+
 
         cmake = CMake(self)
 
@@ -70,8 +105,12 @@ class LibpngConan(ConanFile):
         cmake.definitions['CMAKE_INSTALL_INCLUDEDIR'] = 'include'
 
         cmake.definitions["PNG_TESTS"] = "OFF"
-        cmake.definitions["PNG_SHARED"] = self.options.shared
-        cmake.definitions["PNG_STATIC"] = not self.options.shared
+        if self.is_emscripten():
+            cmake.definitions["PNG_SHARED"] = "ON"
+            cmake.definitions["PNG_STATIC"] = "OFF"
+        else:
+            cmake.definitions["PNG_SHARED"] = self.options.shared
+            cmake.definitions["PNG_STATIC"] = not self.options.shared
         cmake.definitions["PNG_DEBUG"] = "OFF" if self.settings.build_type == "Release" else "ON"
         cmake.configure(source_folder=self.source_subfolder)
         cmake.build()
@@ -82,6 +121,10 @@ class LibpngConan(ConanFile):
         shutil.rmtree(os.path.join(self.package_folder, 'share', 'man'), ignore_errors=True)
 
     def package_info(self):
+        if self.is_emscripten():
+            self.cpp_info.libs = ["png16"] if self.settings.build_type == "Release" else ["png16d"]
+            return
+            
         if self.settings.os == "Windows":
             if self.settings.compiler == "gcc":
                 self.cpp_info.libs = ["png"]
