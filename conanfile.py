@@ -10,7 +10,9 @@ try:
     import conanos.conan.hacks.cmake
 except:
     if os.environ.get('EMSCRIPTEN_VERSIONS'):
-        raise Exception('Please use pip install conanos to patch conan for emscripten binding !')
+        raise Exception(
+            'Please use pip install conanos to patch conan for emscripten binding !')
+
 
 class LibpngConan(ConanFile):
     name = "libpng"
@@ -32,7 +34,7 @@ class LibpngConan(ConanFile):
         try:
             return self.settings.compiler == 'emcc'
         except:
-		    return False
+            return False
 
     def requirements(self):
         self.requires.add("zlib/1.2.11@conanos/testing")
@@ -57,7 +59,8 @@ class LibpngConan(ConanFile):
 
     def source(self):
         base_url = "https://sourceforge.net/projects/libpng/files/libpng16/"
-        tools.get("%s/%s/libpng-%s.tar.gz" % (base_url, self.version, self.version))
+        tools.get("%s/%s/libpng-%s.tar.gz" %
+                  (base_url, self.version, self.version))
         #tools.get("%s/older-releases/%s/libpng-%s.tar.gz" % (base_url, self.version, self.version))
         os.rename("libpng-" + self.version, self.source_subfolder)
         os.rename(os.path.join(self.source_subfolder, "CMakeLists.txt"),
@@ -95,9 +98,6 @@ class LibpngConan(ConanFile):
                                   'if(NOT M_LIBRARY)',
                                   'set(M_LIBRARY "")\n  if(NOT M_LIBRARY)')
 
-
-
-
         cmake = CMake(self)
 
         cmake.definitions['CMAKE_INSTALL_LIBDIR'] = 'lib'
@@ -117,14 +117,17 @@ class LibpngConan(ConanFile):
         cmake.install()
 
     def package(self):
-        self.copy("LICENSE", src=self.source_subfolder, dst="licenses", ignore_case=True, keep_path=False)
-        shutil.rmtree(os.path.join(self.package_folder, 'share', 'man'), ignore_errors=True)
+        self.copy("LICENSE", src=self.source_subfolder,
+                  dst="licenses", ignore_case=True, keep_path=False)
+        shutil.rmtree(os.path.join(self.package_folder,
+                                   'share', 'man'), ignore_errors=True)
 
     def package_info(self):
         if self.is_emscripten():
-            self.cpp_info.libs = ["png16"] if self.settings.build_type == "Release" else ["png16d"]
+            self.cpp_info.libs = [
+                "png16"] if self.settings.build_type == "Release" else ["png16d"]
             return
-            
+
         if self.settings.os == "Windows":
             if self.settings.compiler == "gcc":
                 self.cpp_info.libs = ["png"]
