@@ -26,7 +26,7 @@ class LibpngConan(ConanFile):
     generators = "cmake"
     settings = "os", "arch", "compiler", "build_type"
     options = {"shared": [True, False], "fPIC": [True, False]}
-    default_options = "shared=False", "fPIC=True"
+    default_options = "shared=True", "fPIC=True"
 
     source_subfolder = "source_subfolder"
 
@@ -37,7 +37,7 @@ class LibpngConan(ConanFile):
             return False
 
     def requirements(self):
-        self.requires.add("zlib/1.2.11@conanos/testing")
+        self.requires.add("zlib/1.2.11@conanos/dev")
 
     def config_options(self):
         if self.settings.os == "Windows":
