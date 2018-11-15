@@ -4,6 +4,7 @@
 import os
 import shutil
 from conans import ConanFile, tools, CMake
+from conanos.build import config_scheme
 
 
 try:
@@ -26,7 +27,7 @@ class LibpngConan(ConanFile):
     generators = "cmake"
     settings = "os", "arch", "compiler", "build_type"
     options = {"shared": [True, False], "fPIC": [True, False]}
-    default_options = "shared=True", "fPIC=True"
+    default_options = "shared=False", "fPIC=True"
 
     source_subfolder = "source_subfolder"
 
@@ -37,7 +38,10 @@ class LibpngConan(ConanFile):
             return False
 
     def requirements(self):
-        self.requires.add("zlib/1.2.11@conanos/dev")
+        self.requires.add("zlib/1.2.11@conanos/stable")
+
+        config_scheme(self)
+
 
     def config_options(self):
         if self.settings.os == "Windows":
@@ -51,12 +55,7 @@ class LibpngConan(ConanFile):
             del self.settings.arch
             self.options.remove("fPIC")
             self.options.remove("shared")
-
-        # use shared zlib for dynamic lib
-        if not self.is_emscripten():
-            if self.options.shared:
-                self.options['zlib'].shared = True
-
+        
     def source(self):
         base_url = "https://sourceforge.net/projects/libpng/files/libpng16/"
         tools.get("%s/%s/libpng-%s.tar.gz" %

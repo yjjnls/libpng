@@ -1,9 +1,8 @@
 ## Package Status
 
-| Bintray | Appveyor | Travis | 
-|---------|-----------|--------|
-|[![Download](https://api.bintray.com/packages/bincrafters/public-conan/libpng%3Abincrafters/images/download.svg)](https://bintray.com/bincrafters/public-conan/libpng%3Abincrafters/_latestVersion)|[![Build status](https://ci.appveyor.com/api/projects/status/dx35hcljverrdpi5/branch/stable/1.6.34?svg=true)](https://ci.appveyor.com/project/BinCrafters/conan-libpng/branch/stable/1.6.34)|[![Build Status](https://travis-ci.org/bincrafters/conan-libpng.svg?branch=stable%2F1.6.34)](https://travis-ci.org/bincrafters/conan-libpng)|
-
+| Windows | Linux   | 
+|:-------:|:-------:|
+|[![Build status](https://ci.appveyor.com/api/projects/status/github/conanos/libpng?svg=true)](https://ci.appveyor.com/project/Mingyiz/libpng)|[![Build Status](https://travis-ci.org/conanos/libpng.svg)](https://travis-ci.org/conanos/libpng)|
 ## Conan.io Information
 
 Bincrafters packages can be found in the following public Conan repository:
