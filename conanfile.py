@@ -120,6 +120,19 @@ class LibpngConan(ConanFile):
                   dst="licenses", ignore_case=True, keep_path=False)
         shutil.rmtree(os.path.join(self.package_folder,
                                    'share', 'man'), ignore_errors=True)
+        if self.settings.os == "Windows":
+            for s, r in {"@prefix@" : self.package_folder,
+                         "@exec_prefix@" : "${prefix}",
+                         "@libdir@" : "${prefix}/lib",
+                         "@includedir@" : "${prefix}/include",
+                         "@PNGLIB_MAJOR@" : self.version.split(".")[0],
+                         "@PNGLIB_MINOR@" : self.version.split(".")[1],
+                         "@PNGLIB_VERSION@" : self.version,
+                         "@LIBS@" : ""}.items():
+                tools.replace_in_file(os.path.join(self.source_folder, self.source_subfolder, 'libpng.pc.in'),s,r)
+                tools.mkdir(os.path.join(self.package_folder, "lib", "pkgconfig"))
+                shutil.copy2(os.path.join(self.source_folder, self.source_subfolder, 'libpng.pc.in'),
+                             os.path.join(self.package_folder, "lib", "pkgconfig", 'libpng.pc'))
 
     def package_info(self):
         if self.is_emscripten():
