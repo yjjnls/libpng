@@ -5,15 +5,12 @@ import os
 import platform
 
 if __name__ == "__main__":    
-    # Main('zlib',pure_c=True)
     builder = ConanMultiPackager(docker_entry_script='/bin/bash -c ~/emsdk/emsdk_env.sh')
-    builder.add_common_builds(shared_option_name="zlib:shared", pure_c=True)
 
     if os.environ.get('EMSCRIPTEN_VERSIONS'):
         for version in os.environ['EMSCRIPTEN_VERSIONS'].split(','):
             for build_type in os.environ.get('CONAN_BUILD_TYPES','Debug').split(','):
                 builder.add(settings={
-                    "os": platform.system(),
                     "arch": os.environ.get('CONAN_ARCHS','x86_64'), 
                     "compiler": "emcc",
                     "compiler.libcxx":'libstdc++11',

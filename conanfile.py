@@ -120,7 +120,7 @@ class LibpngConan(ConanFile):
                   dst="licenses", ignore_case=True, keep_path=False)
         shutil.rmtree(os.path.join(self.package_folder,
                                    'share', 'man'), ignore_errors=True)
-        if self.settings.os == "Windows":
+        if not self.is_emscripten() and self.settings.os == "Windows":
             for s, r in {"@prefix@" : self.package_folder,
                          "@exec_prefix@" : "${prefix}",
                          "@libdir@" : "${prefix}/lib",
